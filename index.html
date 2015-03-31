@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+circle.menu {
+  stroke: #000;
+  stroke-width: 8;
+}
+
+</style>
+<body>
+<script src="../components/d3/d3.js"></script>
+<script src="../components/jquery/dist/jquery.js"></script>
+<script>
+
+var width = 500,
+    height = 960,
+    padding = 3, // separation between nodes
+    menuColor = "#cc6666", // fill color
+    maxRadius = 47, // radii
+    myWork =   { radius: 45, color: menuColor, cx: width/2, cy: height/2, name: "My Work" },
+    connect = { radius: 47, color: menuColor, cx: width/2, cy: height/2, name: "Connect" },
+    aboutMe =   { radius: 37, color: menuColor, cx: width/2, cy: height/2, name: "About" },
+    blog =   { radius: 32, color: menuColor, cx: width/2, cy: height/2, name: "Blog" },
+    cv =   { radius: 24, color: menuColor, cx: width/2, cy: height/2, name: "CV" }
+
+var n = 5, // total number of nodes
+    m = 1; // number of distinct clusters
+
+var x = d3.scale.ordinal()
+    .domain(d3.range(m))
+    .rangePoints([0, height], 1);
+
+var nodes = [ myWork, connect, aboutMe, blog, cv ];
+
+var force = d3.layout.force()
+    .nodes(nodes)
+    .size([width, height])
+    .gravity(0)
+    .charge(0)
+    .on("tick", tick)
+    .start();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var circle = svg.selectAll("circle")
+    .data(nodes)
+    .enter().append("circle")
+    .attr("r", function(d) { return d.radius; })
+    .style("fill", function(d) { return d.color; })
+    .call(force.drag);
+
+
+var text = svg.selectAll("text")
+    .data(nodes)
+    .enter()
+    .append("text")
+    .call(force.drag);
+
+var textLabels = text
+    .attr("x", function(d) { return d.cx; })
+    .attr("y", function(d) { return d.cy; })
+    .text(function(d){
+      console.log(d.name);
+      return d.name;
+    })
+    .attr("text-anchor", "middle")
+    .attr("font-family", "'Raleway', sans-serif")
+    .attr("font-weight", "400")
+    .attr("font-size", "1.3em")
+    .attr("fill", "white");
+
+function tick(e) {
+  circle
+      .each(gravity(.2 * e.alpha))
+      .each(collide(.5))
+      .attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; });
+  
+  text
+      .each(gravity(.2 * e.alpha))
+      .each(collide(.5))
+      .attr("x", function(d) { return d.x; })
+      .attr("y", function(d) { return d.y; });
+}
+
+// Move nodes toward cluster focus.
+function gravity(alpha) {
+  return function(d) {
+    d.y += (d.cy - d.y) * alpha;
+    d.x += (d.cx - d.x) * alpha;
+  };
+}
+
+// Resolve collisions between nodes.
+function collide(alpha) {
+  var quadtree = d3.geom.quadtree(nodes);
+  return function(d) {
+    var r = d.radius + maxRadius + padding,
+        nx1 = d.x - r,
+        nx2 = d.x + r,
+        ny1 = d.y - r,
+        ny2 = d.y + r;
+    quadtree.visit(function(quad, x1, y1, x2, y2) {
+      if (quad.point && (quad.point !== d)) {
+        var x = d.x - quad.point.x,
+            y = d.y - quad.point.y,
+            l = Math.sqrt(x * x + y * y),
+            r = d.radius + quad.point.radius + (d.color !== quad.point.color) * padding;
+        if (l < r) {
+          l = (l - r) / l * alpha;
+          d.x -= x *= l;
+          d.y -= y *= l;
+          quad.point.x += x;
+          quad.point.y += y;
+        }
+      }
+      return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+    });
+  };
+}
+
+$(function(){
+
+  $('body').append('<p id="my-work">My Work</p>')
+  $('#my-work').css('display', 'none');
+
+  $('circle').each(function(index, elem){
+    console.log(index, elem.__data__.radius);
+    if (elem.__data__.radius === myWork.radius){
+      $(elem).attr('class', 'menu my-work');
+    } else if (elem.__data__.radius === connect.radius){
+      $(elem).attr('class', 'menu connect');
+    } else if (elem.__data__.radius === aboutMe.radius){
+      $(elem).attr('class', 'menu about-me');
+    } else if (elem.__data__.radius === blog.radius){
+      $(elem).attr('class', 'menu blog');
+    } else if (elem.__data__.radius === cv.radius){
+      $(elem).attr('class', 'menu cv');
+    }
+  });
+
+  $('circle').on('mouseenter', function(){
+    $(this).css('stroke', '#ccccff');
+  });
+
+  $('circle').on('mouseleave', function(){
+    $(this).css('stroke', '#000');  
+  });
+
+  // setInterval(function(){
+  //   myWorkPositionX = $('.menu.my-work')[0].cx.animVal.value;
+  //   myWorkPositionY = $('.menu.my-work')[0].cy.animVal.value;
+  //   $('#my-work').css({'display':'initial', 'top': myWorkPositionY - 13, 'left':myWorkPositionX -22, position: 'fixed'});
+  // }, 10);
+
+})
+
+
+
+
+</script>
