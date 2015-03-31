@@ -13,23 +13,19 @@ circle.menu {
 <script src="../components/jquery/dist/jquery.js"></script>
 <script>
 
-var width = 500,
-    height = 960,
+var width = window.innerWidth,
+    height = window.innerHeight,
     padding = 3, // separation between nodes
     menuColor = "#cc6666", // fill color
-    maxRadius = 47, // radii
-    myWork =   { radius: 45, color: menuColor, cx: width/2, cy: height/2, name: "My Work" },
-    connect = { radius: 47, color: menuColor, cx: width/2, cy: height/2, name: "Connect" },
-    aboutMe =   { radius: 37, color: menuColor, cx: width/2, cy: height/2, name: "About" },
-    blog =   { radius: 32, color: menuColor, cx: width/2, cy: height/2, name: "Blog" },
-    cv =   { radius: 24, color: menuColor, cx: width/2, cy: height/2, name: "CV" }
+    maxRadius = 50, // radii
+    myWork =   { radius: 50, color: menuColor, cx: width/2, cy: height/2, name: "My Work", class: "menu my-work" },
+    connect = { radius: 49, color: menuColor, cx: width/2, cy: height/2, name: "Connect", class: "menu connect" },
+    aboutMe =   { radius: 37, color: menuColor, cx: width/2, cy: height/2, name: "About", class: "menu about-me" },
+    blog =   { radius: 32, color: menuColor, cx: width/2, cy: height/2, name: "Blog", class: "menu blog" },
+    cv =   { radius: 24, color: menuColor, cx: width/2, cy: height/2, name: "CV", class: "menu cv" }
 
 var n = 5, // total number of nodes
     m = 1; // number of distinct clusters
-
-var x = d3.scale.ordinal()
-    .domain(d3.range(m))
-    .rangePoints([0, height], 1);
 
 var nodes = [ myWork, connect, aboutMe, blog, cv ];
 
@@ -48,6 +44,7 @@ var svg = d3.select("body").append("svg")
 var circle = svg.selectAll("circle")
     .data(nodes)
     .enter().append("circle")
+    .attr("class", function(d) {return d.class})
     .attr("r", function(d) { return d.radius; })
     .style("fill", function(d) { return d.color; })
     .call(force.drag);
@@ -61,7 +58,7 @@ var text = svg.selectAll("text")
 
 var textLabels = text
     .attr("x", function(d) { return d.cx; })
-    .attr("y", function(d) { return d.cy; })
+    .attr("y", function(d) { return d.cy+6; })
     .text(function(d){
       console.log(d.name);
       return d.name;
@@ -70,7 +67,7 @@ var textLabels = text
     .attr("font-family", "'Raleway', sans-serif")
     .attr("font-weight", "400")
     .attr("font-size", "1.3em")
-    .attr("fill", "white");
+    .attr("fill", "black");
 
 function tick(e) {
   circle
@@ -83,7 +80,7 @@ function tick(e) {
       .each(gravity(.2 * e.alpha))
       .each(collide(.5))
       .attr("x", function(d) { return d.x; })
-      .attr("y", function(d) { return d.y; });
+      .attr("y", function(d) { return d.y+6; });
 }
 
 // Move nodes toward cluster focus.
@@ -122,43 +119,22 @@ function collide(alpha) {
   };
 }
 
-$(function(){
+window.onresize = resize;
 
-  $('body').append('<p id="my-work">My Work</p>')
-  $('#my-work').css('display', 'none');
-
-  $('circle').each(function(index, elem){
-    console.log(index, elem.__data__.radius);
-    if (elem.__data__.radius === myWork.radius){
-      $(elem).attr('class', 'menu my-work');
-    } else if (elem.__data__.radius === connect.radius){
-      $(elem).attr('class', 'menu connect');
-    } else if (elem.__data__.radius === aboutMe.radius){
-      $(elem).attr('class', 'menu about-me');
-    } else if (elem.__data__.radius === blog.radius){
-      $(elem).attr('class', 'menu blog');
-    } else if (elem.__data__.radius === cv.radius){
-      $(elem).attr('class', 'menu cv');
-    }
-  });
-
-  $('circle').on('mouseenter', function(){
-    $(this).css('stroke', '#ccccff');
-  });
-
-  $('circle').on('mouseleave', function(){
-    $(this).css('stroke', '#000');  
-  });
-
-  // setInterval(function(){
-  //   myWorkPositionX = $('.menu.my-work')[0].cx.animVal.value;
-  //   myWorkPositionY = $('.menu.my-work')[0].cy.animVal.value;
-  //   $('#my-work').css({'display':'initial', 'top': myWorkPositionY - 13, 'left':myWorkPositionX -22, position: 'fixed'});
-  // }, 10);
-
-})
-
-
+function resize(e){
+  console.log('Resize?!');
+  // get width/height with container selector (body also works)
+  // or use other method of calculating desired values
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+  svg.attr('width', width);
+  svg.attr('height', height);
+  nodes.forEach(function(node){
+    node.cx = width/2;
+    node.cy = height/2;
+  })
+  force.size([width, height]).resume();
+}
 
 
 </script>
